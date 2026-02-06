@@ -1,0 +1,5 @@
+[
+  {"id": 1, "name": "الفاتحة", "englishName": "Al-Fatihah", "versesCount": 7, "revelationPlace": "Mecca"},
+  {"id": 2, "name": "البقرة", "englishName": "Al-Baqarah", "versesCount": 286, "revelationPlace": "Medina"},
+  {"id": 26, "name": "الشعراء", "englishName": "Ash-Shu'ara", "versesCount": 227, "revelationPlace": "Mecca"}
+]
