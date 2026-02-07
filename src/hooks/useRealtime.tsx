@@ -43,8 +43,8 @@ interface StudentData {
     avatar?: string;
     joinedDate?: number;
     dailyProgress?: Record<string, number>; // YYYY-MM-DD -> count
-    weeklyStats?: Record<string, any>;
-    monthlyStats?: Record<string, any>;
+    weeklyStats?: Record<string, unknown>;
+    monthlyStats?: Record<string, unknown>;
 }
 
 interface RealtimeContextType {
@@ -162,7 +162,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         if (count >= 100) status = "حفظ";
         else if (count >= 50) status = "مراجعة";
 
-        const updates: any = {
+        const updates: Record<string, unknown> = {
             progress: count, // Legacy fallback
             status: status,
             lastUpdated: Date.now(),
