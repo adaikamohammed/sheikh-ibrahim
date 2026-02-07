@@ -18,7 +18,7 @@ export default function Navigation() {
     ];
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-[9999] md:bottom-auto md:top-0 md:left-0 md:h-screen md:w-20 bg-background/80 backdrop-blur-xl border-t md:border-t-0 md:border-l border-card-border flex md:flex-col items-center justify-around md:justify-center md:space-y-8 p-4">
+        <nav className="fixed bottom-0 left-0 right-0 z-[9999] md:left-0 md:top-0 md:h-screen md:w-24 bg-slate-900/95 backdrop-blur-xl border-t md:border-t-0 md:border-l border-slate-700 flex md:flex-col items-center justify-around md:justify-start md:pt-6 md:space-y-2 p-2 md:p-4">
             {navItems.map((item) => {
                 const isActive = pathname === item.path;
                 const Icon = item.icon;
@@ -27,16 +27,17 @@ export default function Navigation() {
                     <Link
                         key={item.path}
                         href={item.path}
-                        className={`flex flex-col md:flex-row items-center space-y-1 md:space-y-0 md:space-x-3 md:space-x-reverse group transition-all ${isActive ? "text-primaryScale-500" : "text-slate-400 hover:text-primary"
+                        title={item.label}
+                        className={`flex flex-col md:flex-col items-center space-y-1 md:space-y-2 group transition-all w-16 md:w-full md:justify-center ${isActive ? "text-gold" : "text-slate-400 hover:text-gold"
                             }`}
                     >
-                        <div className={`p-2 rounded-2xl transition-all ${isActive
-                                ? "bg-primary/20 text-primary shadow-[0_0_15px_rgba(212,175,55,0.3)] scale-110"
-                                : "group-hover:bg-primary/10 group-hover:text-primary"
+                        <div className={`p-3 rounded-2xl transition-all md:w-full md:flex md:justify-center ${isActive
+                                ? "bg-gold/20 text-gold shadow-lg shadow-gold/30"
+                                : "group-hover:bg-gold/10 group-hover:text-gold"
                             }`}>
-                            <Icon className="w-6 h-6" />
+                            <Icon className="w-5 h-5 md:w-6 md:h-6" />
                         </div>
-                        <span className="text-[10px] md:hidden font-bold font-sans">{item.label}</span>
+                        <span className="text-[9px] md:hidden font-bold">{item.label}</span>
                     </Link>
                 );
             })}

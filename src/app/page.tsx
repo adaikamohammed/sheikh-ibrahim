@@ -30,7 +30,7 @@ export default function Home() {
   if (!currentUser || !role) return null;
 
   return (
-    <main>
+    <main className="p-4 md:p-8 max-w-7xl mx-auto">
       <RoleSwitcher />
       {role === "student" ? <StudentDashboard /> : <SheikhDashboard />}
     </main>

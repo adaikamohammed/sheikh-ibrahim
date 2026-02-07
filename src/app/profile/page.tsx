@@ -27,7 +27,7 @@ export default function ProfilePage() {
             <div className="absolute top-0 left-0 w-96 h-96 bg-gold/5 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2"></div>
 
             {/* Header */}
-            <header className="p-6 sticky top-0 z-50 glass-panel border-b border-card-border backdrop-blur-md">
+            <header className="p-4 md:p-6 sticky top-0 z-50 glass-panel border-b border-card-border backdrop-blur-md">
                 <div className="max-w-md mx-auto flex justify-between items-center">
                     <button
                         onClick={() => router.back()}
@@ -41,7 +41,7 @@ export default function ProfilePage() {
                 </div>
             </header>
 
-            <main className="max-w-md mx-auto p-6 space-y-8 relative z-10">
+            <main className="max-w-md mx-auto px-4 md:px-6 py-6 md:py-8 space-y-8 relative z-10 pb-32 md:pb-8">
 
                 {/* Profile Card */}
                 <div className="glass-panel rounded-3xl p-8 text-center space-y-4 border border-card-border shadow-lg relative overflow-hidden group">

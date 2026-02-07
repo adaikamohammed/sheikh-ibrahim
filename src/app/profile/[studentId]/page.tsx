@@ -67,10 +67,10 @@ export default function StudentDetailsPage() {
   const todayCount = student.dailyProgress?.[today] || 0;
 
   return (
-    <div className="min-h-screen bg-background text-white pb-32">
+    <div className="min-h-screen bg-background text-white pb-32 md:pb-8">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/2"></div>
 
-      <main className="max-w-4xl mx-auto px-6 pt-10 space-y-8 relative z-10">
+      <main className="max-w-4xl mx-auto px-4 md:px-8 pt-6 md:pt-10 space-y-8 relative z-10">
         {/* Header with Back Button */}
         <div className="flex items-center space-x-4 space-x-reverse">
           <button

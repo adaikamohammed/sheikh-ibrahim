@@ -81,10 +81,10 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-white pb-32">
+    <div className="min-h-screen bg-background text-white pb-32 md:pb-8">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/2"></div>
 
-      <main className="max-w-7xl mx-auto px-6 pt-10 space-y-8 relative z-10">
+      <main className="max-w-7xl mx-auto px-4 md:px-8 pt-6 md:pt-10 space-y-8 relative z-10">
         {/* Header */}
         <header className="space-y-4">
           <div>
