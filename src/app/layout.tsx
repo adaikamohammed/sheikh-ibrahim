@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { Amiri, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { RealtimeProvider } from "@/hooks/useRealtime";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { WirdProvider } from "@/hooks/useWird";
+import Navigation from "@/components/Navigation";
 import "./globals.css";
 
 const amiri = Amiri({
@@ -25,13 +29,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body
         className={`${amiri.variable} ${ibmPlexArabic.variable} font-sans antialiased bg-[#020617] text-white selection:bg-gold selection:text-black`}
       >
-        <RealtimeProvider>
-          {children}
-        </RealtimeProvider>
+        <ThemeProvider>
+          <WirdProvider>
+            <RealtimeProvider>
+              <Navigation />
+              {/* محتوى الصفحة بمسافة آمنة من الشريط الجانبي */}
+              <main className="md:pr-24 pb-32 md:pb-0 min-h-screen">
+                {children}
+              </main>
+            </RealtimeProvider>
+          </WirdProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

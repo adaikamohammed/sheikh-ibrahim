@@ -62,7 +62,8 @@ export default function RepetitionCounter({ limit = 100, initialCount = 0, onUpd
                         cx="160"
                         cy="160"
                         r={radius}
-                        stroke="rgba(255,255,255,0.05)"
+                        stroke="currentColor"
+                        className="text-slate-200 dark:text-slate-800"
                         strokeWidth="8"
                         fill="transparent"
                     />
@@ -99,7 +100,7 @@ export default function RepetitionCounter({ limit = 100, initialCount = 0, onUpd
 
                 {/* Counter Text */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-10">
-                    <span className="text-8xl font-bold font-sans text-transparent bg-clip-text bg-gradient-to-b from-white to-emerald-200 drop-shadow-lg">
+                    <span className="text-8xl font-bold font-sans text-transparent bg-clip-text bg-gradient-to-b from-foreground to-emerald-500 drop-shadow-lg">
                         {count}
                     </span>
                     <span className="text-emerald-400 mt-4 font-normal text-lg tracking-widest opacity-80 uppercase">تسبــيحة</span>
@@ -109,7 +110,7 @@ export default function RepetitionCounter({ limit = 100, initialCount = 0, onUpd
             <div className="flex space-x-4 space-x-reverse">
                 <button
                     onClick={reset}
-                    className="px-8 py-3 glass-midnight rounded-full text-emerald-400/70 hover:text-emerald-300 hover:bg-emerald-950/30 transition-all border border-white/5 active:scale-95"
+                    className="px-8 py-3 glass-panel rounded-full text-emerald-500 hover:bg-emerald-500/10 transition-all border border-card-border active:scale-95"
                 >
                     بدء من جديد
                 </button>

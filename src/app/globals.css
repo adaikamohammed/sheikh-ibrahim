@@ -1,9 +1,13 @@
 @import "tailwindcss";
 
 @theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
   --color-midnight-950: #020617;
   --color-midnight-900: #0f172a;
   --color-midnight-800: #1e293b;
+
   --color-gold: #d4af37;
   --color-gold-light: #fcd34d;
   --color-emerald-glow: #10b981;
@@ -13,14 +17,34 @@
 }
 
 :root {
+  /* Light Theme (Royal White) */
+  --background: #f8fafc;
+  /* Slate-50 */
+  --foreground: #0f172a;
+  /* Slate-900 */
+  --card-bg: rgba(255, 255, 255, 0.7);
+  --card-border: rgba(212, 175, 55, 0.2);
+  --glass-shadow: rgba(212, 175, 55, 0.1);
+  --primary: #d4af37;
+  --noise-opacity: 0.05;
+}
+
+[data-theme="dark"] {
+  /* Dark Theme (Royal Midnight) */
   --background: #020617;
   --foreground: #f8fafc;
+  --card-bg: rgba(15, 23, 42, 0.6);
+  --card-border: rgba(255, 255, 255, 0.05);
+  --glass-shadow: rgba(0, 0, 0, 0.3);
+  --primary: #d4af37;
+  --noise-opacity: 0.03;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
   overflow-x: hidden;
 }
 
@@ -41,16 +65,19 @@ h4,
   height: 100%;
   pointer-events: none;
   z-index: -1;
-  opacity: 0.03;
+  opacity: var(--noise-opacity);
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
+/* Dynamic Glassmorphism */
+.glass-panel,
 .glass-midnight {
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--card-bg);
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 4px 30px var(--glass-shadow);
+  transition: all 0.3s ease;
 }
 
 .glass-gold {
@@ -64,6 +91,7 @@ h4,
 .text-gradient-gold {
   background: linear-gradient(to bottom, #fcd34d, #d4af37);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

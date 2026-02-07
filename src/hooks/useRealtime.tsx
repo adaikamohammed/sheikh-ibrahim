@@ -1,41 +1,59 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import { ref, onValue, set, update } from "firebase/database";
+import { db, auth } from "@/lib/firebase";
+import { ref, onValue, set, update, get } from "firebase/database";
+import { onAuthStateChanged, User as FirebaseUser, signOut } from "firebase/auth";
+import { useRouter, usePathname } from "next/navigation";
 
-// Define the two test users provided by the user
-export const TEST_USERS = {
-    SHEIKH: {
-        uid: "jpKRLSYrEYgsVcBHl3nekWw1", // Replace with full UID if available or use this prefix
-        email: "admin00@gmail.com",
-        role: "sheikh",
-        name: "الشيخ إبراهيم مراد"
-    },
-    STUDENT: {
-        uid: "QpRjyxxaT7dPeaepzWTv461i1", // Replace with full UID if available
-        email: "admin1@gmail.com",
-        role: "student",
-        name: "شايبي عبد الرحمان"
-    }
+// Define the test users and admin emails
+export const ADMIN_EMAILS = {
+    SHEIKH: "admin00@gmail.com",
+    // We can add other admins here if needed
 };
 
-type UserRole = "sheikh" | "student";
+// Student Email to Name Mapping
+const STUDENT_NAMES: Record<string, string> = {
+    "admin1@gmail.com": "بالعيد العاشوري",
+    "admin2@gmail.com": "بالعيد زياد",
+    "admin3@gmail.com": "تواتي أحمد ساجد",
+    "admin4@gmail.com": "جاب الله محمد",
+    "admin5@gmail.com": "حناي عبد الرحمان",
+    "admin6@gmail.com": "حويذق معتصم بالله",
+    "admin7@gmail.com": "شايبي عبد الرحمان",
+    "admin8@gmail.com": "شكيمة يعقوب",
+    "admin9@gmail.com": "طير رياض",
+    "admin10@gmail.com": "فتح الله البراء",
+    "admin11@gmail.com": "كنيوة رائد",
+    "admin12@gmail.com": "مقدود عبد الناصر",
+    "admin13@gmail.com": "ميلاد بولبدة",
+    "admin14@gmail.com": "كنيوة وائل",
+};
+
+type UserRole = "sheikh" | "student" | null;
 
 interface StudentData {
     uid: string;
     name: string;
+    email?: string;
     progress: number;
     status: string;
     lastUpdated: number;
+    phone?: string;
+    avatar?: string;
+    joinedDate?: number;
+    dailyProgress?: Record<string, number>; // YYYY-MM-DD -> count
+    weeklyStats?: Record<string, any>;
+    monthlyStats?: Record<string, any>;
 }
 
 interface RealtimeContextType {
     role: UserRole;
-    currentUser: typeof TEST_USERS.SHEIKH | typeof TEST_USERS.STUDENT;
-    switchRole: (role: UserRole) => void;
+    currentUser: FirebaseUser | null;
+    loading: boolean;
+    logout: () => Promise<void>;
     // Student functions
-    updateProgress: (count: number) => Promise<void>;
+    updateProgress: (count: number, date?: string) => Promise<void>;
     studentData: StudentData | null;
     // Sheikh functions
     allStudents: StudentData[];
@@ -44,44 +62,81 @@ interface RealtimeContextType {
 const RealtimeContext = createContext<RealtimeContextType | null>(null);
 
 export function RealtimeProvider({ children }: { children: React.ReactNode }) {
-    const [role, setRole] = useState<UserRole>("student");
-    const currentUser = role === "sheikh" ? TEST_USERS.SHEIKH : TEST_USERS.STUDENT;
+    const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+    const [role, setRole] = useState<UserRole>(null);
+    const [loading, setLoading] = useState(true);
 
     const [studentData, setStudentData] = useState<StudentData | null>(null);
     const [allStudents, setAllStudents] = useState<StudentData[]>([]);
 
-    // Function to switch role and simulator identity
-    const switchRole = (newRole: UserRole) => {
-        setRole(newRole);
-    };
+    const router = useRouter();
+    const pathname = usePathname();
 
-    // 1. Sync current student data when in Student mode
+    // 1. Monitor Auth State
     useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            setCurrentUser(user);
+
+            if (user) {
+                // Determine role based on email
+                let assignedRole: UserRole = "student";
+                if (user.email === ADMIN_EMAILS.SHEIKH) {
+                    assignedRole = "sheikh";
+                }
+                setRole(assignedRole);
+
+                // Redirect to home if on login page
+                if (pathname === "/login") {
+                    router.push("/");
+                }
+            } else {
+                setRole(null);
+                setStudentData(null);
+                // Redirect to login if not on login page
+                if (pathname !== "/login") {
+                    router.push("/login");
+                }
+            }
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [pathname, router]);
+
+    // 2. Sync Data based on Role
+    useEffect(() => {
+        if (!currentUser || !role) return;
+
         if (role === "student") {
-            const studentRef = ref(db, `students/${TEST_USERS.STUDENT.uid}`);
+            const studentRef = ref(db, `students/${currentUser.uid}`);
             const unsubscribe = onValue(studentRef, (snapshot) => {
                 const data = snapshot.val();
+                const studentEmail = currentUser.email || "";
+                const correctName = STUDENT_NAMES[studentEmail] || currentUser.displayName || "طالب جديد";
+
                 if (data) {
                     setStudentData(data);
+                    // Sync name if it's different (fixes "طالب جديد" or old names)
+                    if (data.name !== correctName) {
+                        update(studentRef, { name: correctName });
+                    }
                 } else {
-                    // Initialize if empty
+                    // Initialize new student data
                     const initialData = {
-                        uid: TEST_USERS.STUDENT.uid,
-                        name: TEST_USERS.STUDENT.name,
+                        uid: currentUser.uid,
+                        name: correctName,
+                        email: studentEmail,
                         progress: 0,
                         status: "تلاوة",
                         lastUpdated: Date.now()
                     };
                     set(studentRef, initialData);
-                    setStudentData(initialData);
+                    setStudentData(initialData as StudentData);
                 }
             });
             return () => unsubscribe();
         }
-    }, [role]);
 
-    // 2. Sync all students when in Sheikh mode
-    useEffect(() => {
         if (role === "sheikh") {
             const studentsRef = ref(db, "students");
             const unsubscribe = onValue(studentsRef, (snapshot) => {
@@ -89,33 +144,45 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
                 if (data) {
                     const studentsList = Object.values(data) as StudentData[];
                     setAllStudents(studentsList);
+                } else {
+                    setAllStudents([]);
                 }
             });
             return () => unsubscribe();
         }
-    }, [role]);
+    }, [currentUser, role]);
 
-    // Update progress function for Student
-    const updateProgress = async (count: number) => {
-        if (role !== "student") return;
+    const updateProgress = async (count: number, date?: string) => {
+        if (role !== "student" || !currentUser) return;
 
-        // Calculate status based on progress (simple logic for demo)
+        const todayStr = date || new Date().toISOString().split('T')[0];
+
+        // Calculate status (legacy/overall)
         let status = "تلاوة";
         if (count >= 100) status = "حفظ";
         else if (count >= 50) status = "مراجعة";
 
-        await update(ref(db, `students/${TEST_USERS.STUDENT.uid}`), {
-            progress: count,
+        const updates: any = {
+            progress: count, // Legacy fallback
             status: status,
-            lastUpdated: Date.now()
-        });
+            lastUpdated: Date.now(),
+        };
+        updates[`dailyProgress/${todayStr}`] = count;
+
+        await update(ref(db, `students/${currentUser.uid}`), updates);
+    };
+
+    const logout = async () => {
+        await signOut(auth);
+        router.push("/login");
     };
 
     return (
         <RealtimeContext.Provider value={{
             role,
             currentUser,
-            switchRole,
+            loading,
+            logout,
             updateProgress,
             studentData,
             allStudents
