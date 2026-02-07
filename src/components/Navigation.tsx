@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, BarChart3, User, Settings } from "lucide-react";
+import { Home, BarChart3, User, Calendar, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRealtime } from "@/hooks/useRealtime";
@@ -11,10 +11,27 @@ export default function Navigation() {
 
     if (!role) return null;
 
-    const navItems = [
+    // العناصر المشتركة بين الجميع
+    const commonItems = [
         { label: "الرئيسية", icon: Home, path: "/" },
+    ];
+
+    // عناصر إضافية للشيخ فقط
+    const sheikhItems = [
         { label: "الإحصائيات", icon: BarChart3, path: "/stats" },
+        { label: "التقويم", icon: Calendar, path: "/calendar" },
+        { label: "الأوراد", icon: TrendingUp, path: "/wird-tracking" },
+    ];
+
+    // عناصر الملف الشخصي
+    const profileItems = [
         { label: "الملف الشخصي", icon: User, path: "/profile" },
+    ];
+
+    const navItems = [
+        ...commonItems,
+        ...(role === "sheikh" ? sheikhItems : []),
+        ...profileItems,
     ];
 
     return (
