@@ -21,7 +21,7 @@ export default function LoginPage() {
         try {
             await signInWithEmailAndPassword(auth, email, password);
             router.push("/");
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
             setError("فشل تسجيل الدخول. يرجى التحقق من الرسالة وكلمة المرور.");
         } finally {

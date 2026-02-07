@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useWird } from "@/hooks/useWird";
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 import { ar } from "date-fns/locale";
 import {
   TrendingUp,

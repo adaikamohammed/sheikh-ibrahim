@@ -9,9 +9,7 @@ import {
   ArrowRight,
   TrendingUp,
   Calendar,
-  Target,
   Trophy,
-  BarChart3,
   AlertCircle,
 } from "lucide-react";
 

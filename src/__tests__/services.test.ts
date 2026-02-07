@@ -5,7 +5,6 @@
 import {
   calculateCompletionRate,
   calculateWeeklyStats,
-  calculateMonthlyStats,
 } from "@/services/progressService";
 
 import {
