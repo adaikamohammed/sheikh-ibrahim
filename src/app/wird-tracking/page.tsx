@@ -52,18 +52,7 @@ export default function WirdTrackingPage() {
   const { allAssignments } = useWird();
   const [selectedWirdId, setSelectedWirdId] = useState<string>("");
 
-  if (role !== "sheikh") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-slate-500 mx-auto" />
-          <p className="text-slate-400">هذه الصفحة مخصصة للشيخ فقط</p>
-        </div>
-      </div>
-    );
-  }
-
-  // حساب إحصائيات الأوراد
+  // حساب إحصائيات الأوراد - MOVED BEFORE CONDITIONAL
   const wirdStats = useMemo((): WirdStat[] => {
     const today = new Date();
     const monthStart = startOfMonth(today);
@@ -143,6 +132,18 @@ export default function WirdTrackingPage() {
       ).length,
     };
   }, [selectedWird]);
+
+  // CONDITIONAL CHECK MOVED AFTER ALL HOOKS
+  if (role !== "sheikh") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <AlertCircle className="w-12 h-12 text-slate-500 mx-auto" />
+          <p className="text-slate-400">هذه الصفحة مخصصة للشيخ فقط</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-white pb-32 md:pb-8">

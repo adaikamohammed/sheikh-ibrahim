@@ -107,6 +107,7 @@ export interface WirdStudentProgress {
   percentage: number;
   status: "completed" | "in-progress" | "not-started";
   lastUpdate: number;
+  date?: string;
 }
 
 export interface WirdTracking {
@@ -122,6 +123,141 @@ export interface WirdTracking {
     notStarted: number;
     averageCompletion: number;
   };
+}
+
+// ==================== نظام المواعيد والحجوزات ====================
+
+/**
+ * فترة زمنية متاحة (مثل: من 3 عصراً إلى 5 مساءً)
+ */
+export interface TimeSlot {
+  id: string; // معرّف فريد للفترة
+  startTime: string; // HH:mm (15:00)
+  endTime: string; // HH:mm (17:00)
+  duration?: number; // المدة بالدقائق (120)
+  location: "mosque" | "prayer_room" | "quran_school" | "other" | string; // المكان - allow string for now to avoid breaking changes if strict
+  locationDetails?: string; // تفاصيل إضافية (مثل: المسجد الكبير، المصلى الشرقي)
+  isActive?: boolean; // هل الفترة مفعلة الآن؟
+  bookedCount: number; // عدد الطلاب المحجوزين حالياً
+  color?: string; // لون الفترة الزمنية للعرض (hex color)
+  capacity?: number; // Added
+  booked?: number; // Added for student view
+}
+
+/**
+ * توفرية الشيخ في يوم معين
+ */
+export interface SheikhAvailability {
+  id: string; // معرّف فريد
+  dayOfWeek: number; // 0 = Sunday, 6 = Saturday
+  dayName: string; // الاسم بالعربية (الأحد، الاثنين، إلخ)
+  timeSlots: TimeSlot[]; // فترات العمل
+  isAvailable: boolean; // هل اليوم متاح عموماً؟
+  createdAt: number;
+  updatedAt: number;
+}
+
+/**
+ * حجز موعد من الطالب
+ */
+// Removed duplicate TimeSlot definition
+
+export interface StudentAppointment {
+  id: string; // معرّف فريد للحجز
+  studentId: string; // معرّف الطالب
+  studentName: string;
+  studentEmail: string;
+  studentPhone?: string;
+  sheikhId: string; // معرّف الشيخ
+  date: string; // YYYY-MM-DD (التاريخ المحدد للموعد)
+  dayOfWeek: number;
+  timeSlotId: string; // معرّف الفترة الزمنية
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  duration: number; // المدة بالدقائق (15، 30، إلخ)
+  location: string; // المكان
+  locationDetails?: string;
+  surahId?: number; // السورة المراد عرضها (اختياري)
+  surahName?: string;
+  arabicSurahName?: string;
+  ayahRange?: string; // الآيات المراد عرضها
+  status: "pending" | "confirmed" | "completed" | "cancelled"; // حالة الحجز
+  notes?: string;
+  createdAt: number;
+  cancelledAt?: number;
+  cancelReason?: string;
+  completedAt?: number; // وقت إكمال الموعد
+  rating?: number; // تقييم الطالب (1-5)
+  feedback?: string;
+}
+
+/**
+ * جدول مواعيد الشيخ بكامل التفاصيل
+ */
+export interface SheikhSchedule {
+  sheikhId: string;
+  sheikhName: string;
+  totalStudents: number; // عدد الطلاب الكلي
+  weeklyAvailability: SheikhAvailability[]; // توفرية الأسبوع
+  appointments: StudentAppointment[]; // كل الحجوزات
+  statistics: {
+    totalAppointments: number;
+    completedAppointments: number;
+    cancelledAppointments: number;
+    averageRating: number;
+    bookingRate: number; // النسبة المئوية للفترات المحجوزة
+  };
+  updatedAt: number;
+}
+
+/**
+ * إحصائيات الحجوزات لليوم الواحد
+ */
+export interface DayStatistics {
+  date: string; // YYYY-MM-DD
+  dayOfWeek: number;
+  totalSlots: number; // إجمالي الفترات
+  availableSlots: number; // الفترات المتاحة
+  bookedSlots: number; // الفترات المحجوزة
+  completedAppointments: number;
+  cancelledAppointments: number;
+  bookingPercentage: number; // النسبة المئوية
+}
+
+/**
+ * طلب تأكيد موعد من الشيخ
+ */
+export interface AppointmentRequest {
+  id: string;
+  studentId: string;
+  studentName: string;
+  requestedDate: string; // YYYY-MM-DD
+  requestedTimeSlot: string; // HH:mm-HH:mm
+  location: string;
+  surah?: string;
+  notes?: string;
+  status: "pending" | "approved" | "rejected"; // قيد الانتظار، موافق عليه، مرفوض
+  createdAt: number;
+  respondedAt?: number;
+  rejectionReason?: string;
+}
+
+/**
+ * إشعار للطالب أو الشيخ
+ */
+export interface AppointmentNotification {
+  id: string;
+  recipientId: string; // معرّف المتلقي
+  recipientRole: "student" | "sheikh";
+  appointmentId: string;
+  type: "booking_confirmed" | "booking_cancelled" | "reminder" | "reschedule_request"; // نوع الإشعار
+  title: string;
+  message: string;
+  date: string; // تاريخ الموعد
+  time: string; // وقت الموعد
+  isRead: boolean;
+  createdAt: number;
+  expiresAt?: number; // متى ينتهي صلاحية الإشعار
 }
 
 export type UserRole = "sheikh" | "student" | null;

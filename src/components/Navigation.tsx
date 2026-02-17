@@ -1,41 +1,96 @@
 "use client";
 
-import { Home, BarChart3, User, Calendar, TrendingUp } from "lucide-react";
+import { Home, BarChart3, User, Calendar, TrendingUp, Clock, ChevronsLeft, ChevronsRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRealtime } from "@/hooks/useRealtime";
+import { useState, useEffect } from "react";
 
 export default function Navigation() {
     const pathname = usePathname();
     const { role } = useRealtime();
+    const [expanded, setExpanded] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        const saved = localStorage.getItem("nav-expanded");
+        if (saved === "true") setExpanded(true);
+    }, []);
+
+    const toggle = () => {
+        const next = !expanded;
+        setExpanded(next);
+        localStorage.setItem("nav-expanded", String(next));
+    };
 
     if (!role) return null;
 
-    // العناصر المشتركة بين الجميع
     const commonItems = [
         { label: "الرئيسية", icon: Home, path: "/" },
     ];
 
-    // عناصر إضافية للشيخ فقط
     const sheikhItems = [
         { label: "الإحصائيات", icon: BarChart3, path: "/stats" },
         { label: "التقويم", icon: Calendar, path: "/calendar" },
+        { label: "المواعيد", icon: Clock, path: "/appointments" },
         { label: "الأوراد", icon: TrendingUp, path: "/wird-tracking" },
     ];
 
-    // عناصر الملف الشخصي
+    const studentItems = [
+        { label: "حجز حصة", icon: Calendar, path: "/book-appointment" },
+    ];
+
     const profileItems = [
-        { label: "الملف الشخصي", icon: User, path: "/profile" },
+        { label: "حسابي", icon: User, path: "/profile" },
     ];
 
     const navItems = [
         ...commonItems,
-        ...(role === "sheikh" ? sheikhItems : []),
+        ...(role === "sheikh" ? sheikhItems : studentItems),
         ...profileItems,
     ];
 
+    // قبل التحميل: مطوي دائماً لمنع الوميض
+    const isOpen = mounted && expanded;
+
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-[9999] md:left-0 md:top-0 md:h-screen md:w-24 bg-slate-900/95 backdrop-blur-xl border-t md:border-t-0 md:border-l border-slate-700 flex md:flex-col items-center justify-around md:justify-start md:pt-6 md:space-y-2 p-2 md:p-4">
+        <nav
+            className={`
+                fixed bottom-0 inset-x-0 z-[9999]
+                bg-slate-900/95 backdrop-blur-2xl
+                border-t border-white/5
+                flex items-center justify-around
+                p-1.5
+                shadow-2xl shadow-black/50
+
+                md:sticky md:top-0 md:bottom-auto md:inset-x-auto
+                md:h-screen md:flex-shrink-0
+                md:flex-col md:justify-start md:items-stretch
+                md:p-2 md:pt-4 md:gap-0
+                md:border-t-0 md:border-e
+                md:overflow-y-auto md:overflow-x-hidden
+                transition-[width] duration-300 ease-in-out
+                ${isOpen ? "md:w-52" : "md:w-[72px]"}
+            `}
+        >
+            {/* ═══════ زر التبديل — سطح المكتب فقط ═══════ */}
+            <button
+                onClick={toggle}
+                className="hidden md:flex items-center justify-center w-full p-3 mb-1 rounded-xl
+                           hover:bg-white/5 text-slate-400 hover:text-gold transition-all"
+                title={isOpen ? "طي الشريط" : "توسيع الشريط"}
+            >
+                {isOpen
+                    ? <ChevronsRight className="w-5 h-5" />
+                    : <ChevronsLeft className="w-5 h-5" />
+                }
+            </button>
+
+            {/* فاصل */}
+            <div className="hidden md:block mx-3 mb-2 border-b border-white/10" />
+
+            {/* ═══════ عناصر التنقل ═══════ */}
             {navItems.map((item) => {
                 const isActive = pathname === item.path;
                 const Icon = item.icon;
@@ -45,16 +100,50 @@ export default function Navigation() {
                         key={item.path}
                         href={item.path}
                         title={item.label}
-                        className={`flex flex-col md:flex-col items-center space-y-1 md:space-y-2 group transition-all w-16 md:w-full md:justify-center ${isActive ? "text-gold" : "text-slate-400 hover:text-gold"
-                            }`}
+                        className={`
+                            relative flex flex-col items-center gap-0.5 p-2 rounded-xl
+                            transition-all duration-200 min-w-0
+
+                            md:flex-row md:gap-3 md:p-3 md:w-full md:mb-0.5
+                            ${isOpen ? "md:px-4" : "md:justify-center"}
+                            ${isActive
+                                ? "text-gold bg-gold/10 shadow-md shadow-gold/5"
+                                : "text-slate-400 hover:text-white hover:bg-white/5"
+                            }
+                        `}
                     >
-                        <div className={`p-3 rounded-2xl transition-all md:w-full md:flex md:justify-center ${isActive
-                                ? "bg-gold/20 text-gold shadow-lg shadow-gold/30"
-                                : "group-hover:bg-gold/10 group-hover:text-gold"
-                            }`}>
-                            <Icon className="w-5 h-5 md:w-6 md:h-6" />
+                        {/* الأيقونة */}
+                        <div className={`
+                            flex-shrink-0 flex items-center justify-center
+                            p-1.5 md:p-0 rounded-xl transition-all duration-200
+                            ${isActive
+                                ? "md:bg-transparent"
+                                : ""
+                            }
+                        `}>
+                            <Icon className={`w-5 h-5 md:w-[22px] md:h-[22px] transition-colors ${isActive ? "text-gold" : ""}`} />
                         </div>
-                        <span className="text-[9px] md:hidden font-bold">{item.label}</span>
+
+                        {/* اللافتة على الموبايل */}
+                        <span className={`text-[9px] font-bold leading-tight md:hidden ${isActive ? "text-gold" : "text-slate-500"}`}>
+                            {item.label}
+                        </span>
+
+                        {/* اللافتة على سطح المكتب — فقط عند التوسيع */}
+                        <span
+                            className={`
+                                hidden md:block text-sm font-bold whitespace-nowrap
+                                transition-all duration-300 overflow-hidden
+                                ${isOpen ? "opacity-100 max-w-[150px]" : "opacity-0 max-w-0"}
+                            `}
+                        >
+                            {item.label}
+                        </span>
+
+                        {/* مؤشر العنصر النشط — سطح المكتب */}
+                        {isActive && (
+                            <div className="hidden md:block absolute end-0 top-1/2 -translate-y-1/2 w-[3px] h-7 bg-gold rounded-s-full shadow-[0_0_12px_rgba(212,175,55,0.4)]" />
+                        )}
                     </Link>
                 );
             })}

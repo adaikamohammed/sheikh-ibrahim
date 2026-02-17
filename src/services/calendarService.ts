@@ -46,11 +46,19 @@ export const QURAN_SURAHS = [
   { id: 30, name: "Ar-Rum", arabicName: "الروم", totalAyahs: 60 },
 ];
 
+// ==================== Cache للسور لتسريع البحث ====================
+const SURAHS_CACHE = new Map<number, (typeof QURAN_SURAHS)[0]>();
+
+// بناء الـ cache عند التحميل الأول
+QURAN_SURAHS.forEach((surah) => {
+  SURAHS_CACHE.set(surah.id, surah);
+});
+
 /**
- * الحصول على معلومات السورة
+ * الحصول على معلومات السورة (محسّن بـ Cache)
  */
 export function getSurahInfo(surahId: number) {
-  return QURAN_SURAHS.find((s) => s.id === surahId);
+  return SURAHS_CACHE.get(surahId);
 }
 
 /**

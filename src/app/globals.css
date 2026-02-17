@@ -1,107 +1,159 @@
 @import "tailwindcss";
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+@theme {
+  /* Color Palette - Premium Gold & Midnight Blue */
+  --color-background: #020617;
+  /* Slate 950 - Deepest Midnight */
+  --color-foreground: #f8fafc;
+  /* Slate 50 - Crisp White */
+
+  --color-primary: #d4af37;
+  /* Metallic Gold */
+  --color-primary-light: #fcd34d;
+  /* Bright Gold */
+  --color-primary-dark: #b4941f;
+  /* Deep Gold */
+
+  --color-secondary: #0f172a;
+  /* Slate 900 */
+  --color-accent: #3b82f6;
+  /* Royal Blue */
+
+  --color-gold: #d4af37;
+  --color-gold-50: #fffbeb;
+  --color-gold-100: #fef3c7;
+  --color-gold-200: #fde68a;
+  --color-gold-300: #fcd34d;
+  --color-gold-400: #fbbf24;
+  --color-gold-500: #f59e0b;
+  --color-gold-600: #d97706;
+  --color-gold-700: #b45309;
+  --color-gold-800: #92400e;
+  --color-gold-900: #78350f;
 
   --color-midnight-950: #020617;
   --color-midnight-900: #0f172a;
   --color-midnight-800: #1e293b;
 
-  --color-gold: #d4af37;
-  --color-gold-light: #fcd34d;
-  --color-emerald-glow: #10b981;
+  --color-card-border: rgba(255, 255, 255, 0.08);
 
-  --font-amiri: var(--font-amiri);
-  --font-sans: var(--font-ibm-plex);
+  /* Fonts */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: "Amiri", "Scheherazade New", serif;
+  /* Elegant Arabic Serif */
+  --font-quran: "Amiri", "Scheherazade New", serif;
 }
 
+/* Base Styles */
 :root {
-  /* Light Theme (Royal White) */
-  --background: #f8fafc;
-  /* Slate-50 */
-  --foreground: #0f172a;
-  /* Slate-900 */
-  --card-bg: rgba(255, 255, 255, 0.7);
-  --card-border: rgba(212, 175, 55, 0.2);
-  --glass-shadow: rgba(212, 175, 55, 0.1);
-  --primary: #d4af37;
-  --noise-opacity: 0.05;
-}
-
-[data-theme="dark"] {
-  /* Dark Theme (Royal Midnight) */
-  --background: #020617;
-  --foreground: #f8fafc;
-  --card-bg: rgba(15, 23, 42, 0.6);
-  --card-border: rgba(255, 255, 255, 0.05);
-  --glass-shadow: rgba(0, 0, 0, 0.3);
-  --primary: #d4af37;
-  --noise-opacity: 0.03;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+  --nav-height: 5rem;
+  --sidebar-width: 5.5rem;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  @apply bg-background text-foreground font-sans antialiased;
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 40%);
+  background-attachment: fixed;
   overflow-x: hidden;
 }
 
+/* Typography */
 h1,
 h2,
 h3,
 h4,
-.font-quran {
-  font-family: var(--font-amiri), serif;
+h5,
+h6 {
+  @apply font-heading tracking-wide;
 }
 
-/* Premium Noise Texture */
-.bg-noise {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: -1;
-  opacity: var(--noise-opacity);
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+/* Premium Utilities */
+@utility glass-panel {
+  @apply bg-slate-900/60 backdrop-blur-xl border border-white/10 shadow-lg rounded-2xl;
 }
 
-/* Dynamic Glassmorphism */
-.glass-panel,
-.glass-midnight {
-  background: var(--card-bg);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--card-border);
-  box-shadow: 0 4px 30px var(--glass-shadow);
-  transition: all 0.3s ease;
+@utility glass-card {
+  @apply bg-slate-800/40 backdrop-blur-md border border-white/5 shadow-md rounded-2xl hover:border-gold/30 hover:bg-slate-800/60 transition-all duration-300;
 }
 
-.glass-gold {
-  background: rgba(212, 175, 55, 0.1);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+@utility text-gold-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-br from-gold-300 via-gold to-gold-600;
 }
 
-.text-gradient-gold {
-  background: linear-gradient(to bottom, #fcd34d, #d4af37);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+@utility btn-primary {
+  @apply bg-gradient-to-br from-gold-400 to-gold-600 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300;
 }
 
-/* RTL Adjustments */
-[dir="rtl"] .ml-auto {
-  margin-right: auto;
-  margin-left: 0;
+@utility btn-ghost {
+  @apply bg-white/5 hover:bg-white/10 text-white/90 font-medium py-2.5 px-6 rounded-xl border border-white/5 hover:border-white/10 transition-all duration-300;
 }
 
-[dir="rtl"] .mr-auto {
-  margin-left: auto;
-  margin-right: 0;
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-700/50 rounded-full hover:bg-slate-600 transition-colors;
+}
+
+/* Hide scrollbar for horizontal scrollers */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Safe area for mobile bottom nav */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* RTL Utilities */
+[dir="rtl"] .font-heading {
+  font-family: "Amiri", serif;
+}
+
+/* Smooth page transitions */
+main {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Touch improvements for mobile */
+@media (max-width: 768px) {
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
 }
