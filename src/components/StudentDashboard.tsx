@@ -1,15 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import RepetitionCounter from "@/components/RepetitionCounter";
 import { BookOpen, Trophy, User, Coffee, Star, AlertCircle } from "lucide-react";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useWird } from "@/hooks/useWird";
 
 export default function StudentDashboard() {
-    const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const searchParams = useSearchParams();
+    const dateFromUrl = searchParams.get('date');
+    const [selectedDate, setSelectedDate] = useState<string>(dateFromUrl || new Date().toISOString().split('T')[0]);
     const { updateProgress, studentData, role } = useRealtime();
     const { getWirdForDate, error: wirdError } = useWird();
+
+    // تحديث التاريخ عند تغيير الرابط (قادم من تقويم الأوراد)
+    useEffect(() => {
+        if (dateFromUrl) {
+            setSelectedDate(dateFromUrl);
+        }
+    }, [dateFromUrl]);
 
     const activeWird = getWirdForDate(selectedDate);
     const currentProgress = studentData?.dailyProgress?.[selectedDate] || 0;

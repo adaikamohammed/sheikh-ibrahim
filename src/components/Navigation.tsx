@@ -38,7 +38,8 @@ export default function Navigation() {
     ];
 
     const studentItems = [
-        { label: "حجز حصة", icon: Calendar, path: "/book-appointment" },
+        { label: "تقويم الأوراد", icon: Calendar, path: "/student-calendar" },
+        { label: "حجز حصة", icon: Clock, path: "/book-appointment" },
     ];
 
     const profileItems = [
