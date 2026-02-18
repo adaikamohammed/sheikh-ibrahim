@@ -30,7 +30,7 @@ export default function RootLayout({
   if (!isInitialized) {
     return (
       <html lang="ar" dir="rtl">
-        <body className="font-sans antialiased bg-[#020617] text-white">
+        <body className="font-sans antialiased bg-background text-foreground">
           <FirebaseError />
         </body>
       </html>
@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body
-        className="font-sans antialiased bg-[#020617] text-white selection:bg-gold selection:text-black"
+        className="font-sans antialiased bg-background text-foreground selection:bg-gold selection:text-black"
       >
         <ThemeProvider>
           <WirdProvider>

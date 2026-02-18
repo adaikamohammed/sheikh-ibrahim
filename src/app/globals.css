@@ -2,22 +2,13 @@
 
 @theme {
   /* Color Palette - Premium Gold & Midnight Blue */
-  --color-background: #020617;
-  /* Slate 950 - Deepest Midnight */
-  --color-foreground: #f8fafc;
-  /* Slate 50 - Crisp White */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 
+  /* Gold Palette */
   --color-primary: #d4af37;
-  /* Metallic Gold */
   --color-primary-light: #fcd34d;
-  /* Bright Gold */
   --color-primary-dark: #b4941f;
-  /* Deep Gold */
-
-  --color-secondary: #0f172a;
-  /* Slate 900 */
-  --color-accent: #3b82f6;
-  /* Royal Blue */
 
   --color-gold: #d4af37;
   --color-gold-50: #fffbeb;
@@ -35,31 +26,59 @@
   --color-midnight-900: #0f172a;
   --color-midnight-800: #1e293b;
 
-  --color-card-border: rgba(255, 255, 255, 0.08);
+  --color-card-border: var(--card-border);
 
   /* Fonts */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-heading: "Amiri", "Scheherazade New", serif;
-  /* Elegant Arabic Serif */
   --font-quran: "Amiri", "Scheherazade New", serif;
 }
 
 /* Base Styles */
 :root {
-  --glass-border: rgba(255, 255, 255, 0.08);
+  /* Light Mode (Premium Cream & Gold) */
+  --background: #fdfbf7;
+  --foreground: #1e293b;
+  --card-border: rgba(212, 175, 55, 0.15);
+
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(212, 175, 55, 0.15);
+  --glass-shadow: 0 8px 32px 0 rgba(212, 175, 55, 0.1);
+}
+
+[data-theme='dark'] {
+  /* Dark Mode (Midnight & Gold) */
+  --background: #020617;
+  --foreground: #f8fafc;
+  --card-border: rgba(255, 255, 255, 0.08);
+
   --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
-  --nav-height: 5rem;
-  --sidebar-width: 5.5rem;
 }
 
 body {
-  @apply bg-background text-foreground font-sans antialiased;
-  background-image:
-    radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 40%);
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  background-image: var(--bg-image);
   background-attachment: fixed;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Theme-specific background images */
+:root {
+  --bg-image: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
+}
+
+[data-theme='dark'] {
+  --bg-image: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 40%);
 }
 
 /* Typography */
