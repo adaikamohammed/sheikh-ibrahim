@@ -109,24 +109,42 @@ export default function CalendarPage() {
   // التعامل مع النقر على اليوم
   const handleDayClick = (day: number) => {
     const dateStr = dateToString(currentYear, currentMonth, day);
-    const previousDay = getPreviousDay(dateStr);
-    const previousWird = assignments[previousDay];
 
     setSelectedDate(dateStr);
     setError("");
 
-    // النظام الذكي: اقترح الآية البدائية التالية
+    // النظام الذكي: البحث للخلف عن آخر ورد فعلي (تخطي العطل والأيام الفارغة)
     let suggested: number | null = null;
     let suggestedSurah = formData.surahId;
+    let lastWird: WirdAssignment | null = null;
 
-    if (previousWird && !previousWird.isHoliday) {
-      suggestedSurah = previousWird.surahId;
-      const nextAyah = previousWird.endAyah + 1;
+    // البحث للخلف حتى 60 يوم للعثور على آخر ورد غير عطلة
+    let searchDate = dateStr;
+    for (let i = 0; i < 60; i++) {
+      searchDate = getPreviousDay(searchDate);
+      const wird = assignments[searchDate];
+      if (wird && !wird.isHoliday) {
+        lastWird = wird;
+        break;
+      }
+    }
+
+    if (lastWird) {
+      suggestedSurah = lastWird.surahId;
+      const nextAyah = lastWird.endAyah + 1;
       const surahInfo = getSurahInfo(suggestedSurah);
 
-      // تحقق من أن الآية لم تتجاوز نهاية السورة
       if (surahInfo && nextAyah <= surahInfo.totalAyahs) {
+        // تابع من الآية التالية في نفس السورة
         suggested = nextAyah;
+      } else if (surahInfo && nextAyah > surahInfo.totalAyahs) {
+        // انتهت السورة — ابدأ السورة التالية من الآية 1
+        const nextSurahId = suggestedSurah + 1;
+        const nextSurah = getSurahInfo(nextSurahId);
+        if (nextSurah) {
+          suggestedSurah = nextSurahId;
+          suggested = 1;
+        }
       }
     }
 
