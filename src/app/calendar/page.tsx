@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRealtime } from "@/hooks/useRealtime";
-import { firestore } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
+import { ref, set, remove, onValue } from "firebase/database";
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,7 +17,6 @@ import {
   BookOpen,
   TrendingUp,
 } from "lucide-react";
-import { collection, setDoc, doc, onSnapshot, deleteDoc } from "firebase/firestore";
 import {
   generateCalendarGrid,
   getDayNameAr,
@@ -57,33 +57,19 @@ export default function CalendarPage() {
   const [error, setError] = useState("");
   const [suggestedStartAyah, setSuggestedStartAyah] = useState<number | null>(null);
 
-  // تحميل البيانات من LocalStorage عند تحميل المكون
+  // ✅ تحميل البيانات من Realtime Database — مصدر وحيد للبيانات
   useEffect(() => {
-    const savedAssignments = localStorage.getItem("wirdAssignments");
-    if (savedAssignments) {
-      try {
-        setAssignments(JSON.parse(savedAssignments));
-      } catch (err) {
-        console.error("خطأ في تحميل البيانات المحفوظة:", err);
-      }
-    }
+    if (!role) return;
 
-    // الاشتراك في تحديثات Firebase إذا كان المستخدم موجوداً
-    if (currentUser?.uid && role === "sheikh") {
-      const assignmentsRef = collection(firestore, "users", currentUser.uid, "wirdAssignments");
-      const unsubscribe = onSnapshot(assignmentsRef, (snapshot) => {
-        const fbAssignments: Record<string, WirdAssignment> = {};
-        snapshot.forEach((doc) => {
-          fbAssignments[doc.id] = doc.data() as WirdAssignment;
-        });
-        setAssignments(fbAssignments);
-        setSyncStatus("saved");
-        setTimeout(() => setSyncStatus("idle"), 2000);
-      });
+    const assignmentsRef = ref(db, "assignments");
+    const unsubscribe = onValue(assignmentsRef, (snapshot) => {
+      const data = snapshot.val() || {};
+      setAssignments(data as Record<string, WirdAssignment>);
+      console.log("[Calendar] ✅ تم تحميل", Object.keys(data).length, "ورد من Realtime DB");
+    });
 
-      return () => unsubscribe();
-    }
-  }, [currentUser?.uid, role]);
+    return () => unsubscribe();
+  }, [role]);
 
   // إنشاء شبكة التقويم
   const calendarGrid = useMemo(
@@ -100,7 +86,7 @@ export default function CalendarPage() {
   const monthStats = useMemo(() => {
     const wirds = Object.values(assignments).filter(
       (w) => w.date >= `${currentYear}-${String(currentMonth).padStart(2, "0")}-01` &&
-             w.date < `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`
+        w.date < `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`
     );
     return {
       totalWirds: wirds.length,
@@ -217,14 +203,11 @@ export default function CalendarPage() {
       setShowModal(false);
       setError("");
 
-      // ✅ حفظ Firebase في الخلفية (بدون انتظار)
-      if (currentUser?.uid && role === "sheikh") {
-        const assignmentsRef = collection(firestore, "users", currentUser.uid, "wirdAssignments");
-        setDoc(doc(assignmentsRef, selectedDate), wird).catch((err) => {
-          console.error("خطأ في مزامنة Firebase:", err);
-          setSyncStatus("error");
-        });
-      }
+      // ✅ حفظ في Realtime Database — مصدر وحيد للبيانات
+      set(ref(db, `assignments/${selectedDate}`), wird).catch((err) => {
+        console.error("خطأ في حفظ الورد:", err);
+        setSyncStatus("error");
+      });
 
       setSyncStatus("saved");
       setTimeout(() => setSyncStatus("idle"), 1500);
@@ -261,11 +244,8 @@ export default function CalendarPage() {
       // حفظ في LocalStorage
       localStorage.setItem("wirdAssignments", JSON.stringify(newAssignments));
 
-      // حذف من Firebase
-      if (currentUser?.uid && role === "sheikh") {
-        const assignmentsRef = collection(firestore, "users", currentUser.uid, "wirdAssignments");
-        await deleteDoc(doc(assignmentsRef, date));
-      }
+      // ✅ حذف من Realtime Database
+      await remove(ref(db, `assignments/${date}`));
 
       setSyncStatus("saved");
       setTimeout(() => setSyncStatus("idle"), 2000);
@@ -322,18 +302,17 @@ export default function CalendarPage() {
             </div>
             {/* مؤشر حالة المزامنة */}
             {syncStatus !== "idle" && (
-              <div className={`flex items-center space-x-2 space-x-reverse px-4 py-2 rounded-xl text-sm font-semibold backdrop-blur-xl border transition-all ${
-                syncStatus === "saving" ? "bg-blue-500/15 text-blue-300 border-blue-500/30" :
+              <div className={`flex items-center space-x-2 space-x-reverse px-4 py-2 rounded-xl text-sm font-semibold backdrop-blur-xl border transition-all ${syncStatus === "saving" ? "bg-blue-500/15 text-blue-300 border-blue-500/30" :
                 syncStatus === "saved" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" :
-                "bg-red-500/15 text-red-300 border-red-500/30"
-              }`}>
+                  "bg-red-500/15 text-red-300 border-red-500/30"
+                }`}>
                 {syncStatus === "saving" && <Loader className="w-4 h-4 animate-spin" />}
                 {syncStatus === "saved" && <CheckCircle2 className="w-4 h-4" />}
                 {syncStatus === "error" && <AlertCircle className="w-4 h-4" />}
                 <span>
                   {syncStatus === "saving" ? "جاري المزامنة..." :
-                   syncStatus === "saved" ? "تم الحفظ" :
-                   "خطأ في المزامنة"}
+                    syncStatus === "saved" ? "تم الحفظ" :
+                      "خطأ في المزامنة"}
                 </span>
               </div>
             )}
@@ -392,7 +371,7 @@ export default function CalendarPage() {
         <div className="glass-panel rounded-2xl p-6 md:p-8 border border-card-border space-y-6 relative overflow-hidden">
           {/* خلفية زخرفية */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-gold/5 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-          
+
           {/* رأس التقويم */}
           <div className="flex items-center justify-between relative z-10">
             <button
@@ -487,9 +466,8 @@ export default function CalendarPage() {
                 return (
                   <div
                     key={dateStr}
-                    className={`aspect-square rounded-xl border-2 transition-all duration-200 cursor-pointer flex flex-col items-center justify-center p-2 relative group ${bgColor} ${borderColor} ${hoverColor} ${
-                      isToday ? "ring-2 ring-offset-2 ring-gold shadow-lg shadow-gold/30" : ""
-                    }`}
+                    className={`aspect-square rounded-xl border-2 transition-all duration-200 cursor-pointer flex flex-col items-center justify-center p-2 relative group ${bgColor} ${borderColor} ${hoverColor} ${isToday ? "ring-2 ring-offset-2 ring-gold shadow-lg shadow-gold/30" : ""
+                      }`}
                     onClick={() => handleDayClick(day)}
                   >
                     {/* رقم اليوم */}
@@ -550,7 +528,7 @@ export default function CalendarPage() {
             <div className="glass-panel rounded-2xl p-6 md:p-8 border border-card-border max-w-lg w-full space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl relative">
               {/* خلفية زخرفية في المودال */}
               <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-gold/10 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-              
+
               {/* الرأس */}
               <div className="flex items-center justify-between pb-4 border-b border-slate-700 relative z-10">
                 <div>
@@ -770,15 +748,14 @@ export default function CalendarPage() {
                 <button
                   onClick={handleAddWird}
                   disabled={isSaving}
-                  className={`flex-1 px-4 py-3 rounded-lg font-bold flex items-center justify-center space-x-2 space-x-reverse shadow-lg hover:shadow-xl transition-all border ${
-                    isSaving
-                      ? "bg-slate-600 opacity-50 cursor-not-allowed border-slate-600"
-                      : syncStatus === "saved"
+                  className={`flex-1 px-4 py-3 rounded-lg font-bold flex items-center justify-center space-x-2 space-x-reverse shadow-lg hover:shadow-xl transition-all border ${isSaving
+                    ? "bg-slate-600 opacity-50 cursor-not-allowed border-slate-600"
+                    : syncStatus === "saved"
                       ? "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:shadow-emerald-500/50 border-emerald-400/50 text-white"
                       : syncStatus === "error"
-                      ? "bg-gradient-to-r from-red-500 to-red-600 hover:shadow-red-500/50 border-red-400/50 text-white"
-                      : "bg-gradient-to-r from-gold to-emerald-400 hover:shadow-gold/50 border-gold/50 text-black"
-                  }`}
+                        ? "bg-gradient-to-r from-red-500 to-red-600 hover:shadow-red-500/50 border-red-400/50 text-white"
+                        : "bg-gradient-to-r from-gold to-emerald-400 hover:shadow-gold/50 border-gold/50 text-black"
+                    }`}
                 >
                   {isSaving ? (
                     <>

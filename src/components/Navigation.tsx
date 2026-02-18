@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, BarChart3, User, Calendar, TrendingUp, Clock, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Home, BarChart3, User, Calendar, TrendingUp, Clock, ChevronsLeft, ChevronsRight, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRealtime } from "@/hooks/useRealtime";
@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 
 export default function Navigation() {
     const pathname = usePathname();
-    const { role } = useRealtime();
+    const { role, logout } = useRealtime();
     const [expanded, setExpanded] = useState(false);
     const [mounted, setMounted] = useState(false);
 
@@ -62,7 +62,6 @@ export default function Navigation() {
                 border-t border-white/5
                 flex items-center justify-around
                 p-1.5
-                shadow-2xl shadow-black/50
 
                 md:sticky md:top-0 md:bottom-auto md:inset-x-auto
                 md:h-screen md:flex-shrink-0
@@ -147,6 +146,47 @@ export default function Navigation() {
                     </Link>
                 );
             })}
+
+            {/* ═══════ فاصل قبل زر الخروج ═══════ */}
+            <div className="hidden md:block flex-1" />
+            <div className="hidden md:block mx-3 mb-2 border-b border-white/10" />
+
+            {/* ═══════ زر تسجيل الخروج ═══════ */}
+            <button
+                onClick={logout}
+                title="تسجيل الخروج"
+                className={`
+                    hidden md:flex items-center gap-3 p-3 rounded-xl w-full mb-2
+                    text-red-400 hover:text-red-300 hover:bg-red-500/10
+                    transition-all duration-200
+                    ${isOpen ? "px-4" : "justify-center"}
+                `}
+            >
+                <LogOut className="w-5 h-5 flex-shrink-0" />
+                <span
+                    className={`
+                        text-sm font-bold whitespace-nowrap
+                        transition-all duration-300 overflow-hidden
+                        ${isOpen ? "opacity-100 max-w-[150px]" : "opacity-0 max-w-0"}
+                    `}
+                >
+                    تسجيل الخروج
+                </span>
+            </button>
+
+            {/* ═══════ زر تسجيل الخروج — الموبايل ═══════ */}
+            <button
+                onClick={logout}
+                title="تسجيل الخروج"
+                className="flex flex-col items-center gap-0.5 p-2 rounded-xl
+                           text-red-400 hover:text-red-300 active:scale-95
+                           transition-all duration-200 min-w-0 md:hidden"
+            >
+                <div className="p-1.5 rounded-xl">
+                    <LogOut className="w-5 h-5" />
+                </div>
+                <span className="text-[9px] font-bold leading-tight text-red-400/70">خروج</span>
+            </button>
         </nav>
     );
 }

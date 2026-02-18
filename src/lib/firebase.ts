@@ -1,7 +1,7 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getDatabase } from "firebase/database";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getDatabase, Database } from "firebase/database";
+import { getAuth, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
 
 // Values should be populated from the Firebase Console
 const firebaseConfig = {
@@ -14,10 +14,30 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase (singleton pattern)
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const firestore = getFirestore(app);
-const auth = getAuth(app);
+let app: FirebaseApp | undefined;
+let db: Database;
+let firestore: Firestore;
+let auth: Auth;
+
+try {
+    if (firebaseConfig.projectId && firebaseConfig.databaseURL) {
+        app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    }
+} catch (error) {
+    console.warn("Firebase initialization skipped or failed:", error);
+}
+
+if (app) {
+    db = getDatabase(app);
+    firestore = getFirestore(app);
+    auth = getAuth(app);
+} else {
+    // Mock objects for build time or server-side rendering where env vars might be missing
+    // This prevents "FIREBASE FATAL ERROR" during Next.js build
+    console.warn("⚠️ Firebase not initialized. Missing environment variables or build mode.");
+    db = {} as Database;
+    firestore = {} as Firestore;
+    auth = {} as Auth;
+}
 
 export { db, firestore, auth };

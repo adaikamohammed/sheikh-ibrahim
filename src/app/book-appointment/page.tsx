@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRealtime } from "@/hooks/useRealtime";
 import { db } from "@/lib/firebase";
-import { ref, onValue, push, set, runTransaction } from "firebase/database";
+import { ref, onValue, push, set } from "firebase/database";
 import {
   Calendar,
   Clock,
@@ -129,12 +129,6 @@ export default function BookAppointmentPage() {
         createdAt: Date.now(),
       });
 
-      // زيادة عدد الحجوزات بشكل ذري
-      const countRef = ref(db, `appointments/schedule/${selectedDay}/slots/${selectedSubSlot.parentSlotId}/bookedCount`);
-      await runTransaction(countRef, (currentCount) => {
-        return (currentCount || 0) + 1;
-      });
-
       setSubmitted(true);
     } catch {
       alert("حدث خطأ أثناء الحجز. حاول مرة أخرى.");
@@ -174,92 +168,105 @@ export default function BookAppointmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 pb-28 md:pb-6">
-      <div className="max-w-4xl mx-auto mb-8">
-        <h1 className="text-2xl md:text-4xl font-bold text-primary mb-2 font-quran">📅 احجز حصة تسميع</h1>
-        <p className="text-slate-400 font-sans">
-          اختر فترة 15 دقيقة لعرض محفوظك على الشيخ
-        </p>
-      </div>
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0f1c] to-black text-white p-4 md:p-8 pb-32">
+      <div className="max-w-5xl mx-auto">
 
-      {/* شريط التقدم */}
-      <div className="max-w-4xl mx-auto mb-8">
-        <div className="flex items-center justify-between mb-2">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex items-center flex-1">
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${step >= s
-                  ? "bg-gradient-to-r from-gold to-emerald-500 text-black"
-                  : "bg-slate-700 text-slate-400"
-                  }`}
-              >
-                {s === 1 && "📅"}
-                {s === 2 && "⏰"}
-                {s === 3 && "✅"}
-              </div>
-              {s < 3 && (
-                <div className={`flex-1 h-1 mx-2 transition-all ${step > s ? "bg-gradient-to-r from-gold to-emerald-500" : "bg-slate-700"}`}></div>
-              )}
-            </div>
-          ))}
+        {/* Header */}
+        <div className="text-center mb-12 relative">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gold/10 rounded-full blur-3xl -z-10"></div>
+          <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-gold to-amber-600 mb-4 font-quran leading-tight py-2">
+            حجز حصة تسميع
+          </h1>
+          <p className="text-slate-400 font-sans text-lg max-w-lg mx-auto leading-relaxed">
+            اختر الوقت المناسب لعرض محفوظك على الشيخ.
+            <br />
+            <span className="text-gold/80 text-sm">مدة الحصة: 15 دقيقة</span>
+          </p>
         </div>
-        <div className="flex justify-between text-sm font-semibold font-sans">
-          <span className={step === 1 ? "text-primary" : "text-slate-400"}>اختيار اليوم</span>
-          <span className={step === 2 ? "text-primary" : "text-slate-400"}>اختيار الوقت</span>
-          <span className={step === 3 ? "text-primary" : "text-slate-400"}>التأكيد</span>
+
+        {/* Steps Indicator */}
+        <div className="flex justify-center mb-12">
+          <div className="flex items-center gap-4 bg-slate-900/50 p-2 rounded-full border border-white/5 backdrop-blur-md">
+            {[
+              { id: 1, label: "اليوم", icon: Calendar },
+              { id: 2, label: "الوقت", icon: Clock },
+              { id: 3, label: "تأكيد", icon: Check },
+            ].map((s, idx) => {
+              const isActive = step >= s.id;
+              const isCurrent = step === s.id;
+              return (
+                <div key={s.id} className="flex items-center">
+                  <div
+                    className={`
+                      flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300
+                      ${isActive ? "bg-gold text-black font-bold shadow-lg shadow-gold/20" : "text-slate-500"}
+                      ${isCurrent ? "scale-105 ring-2 ring-gold/30" : ""}
+                    `}
+                  >
+                    <s.icon className={`w-4 h-4 ${isActive ? "text-black" : "text-slate-500"}`} />
+                    <span className="hidden md:inline font-sans text-sm">{s.label}</span>
+                  </div>
+                  {idx < 2 && (
+                    <div className={`w-8 h-0.5 mx-2 rounded-full ${step > s.id ? "bg-gold/50" : "bg-slate-800"}`}></div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      <div className="max-w-4xl mx-auto">
-        {step === 1 && (
-          <Step1SelectDay
-            onDaySelect={(dayIndex) => {
-              setSelectedDay(dayIndex);
-              const today = new Date();
-              const todayDay = today.getDay();
-              let diff = dayIndex - todayDay;
-              if (diff <= 0) diff += 7;
-              const targetDate = new Date(today);
-              targetDate.setDate(today.getDate() + diff);
-              setSelectedDate(targetDate.toISOString().split("T")[0]);
-              setStep(2);
-            }}
-          />
-        )}
+        {/* Dynamic Content */}
+        <div className="transition-all duration-500 ease-in-out">
+          {step === 1 && (
+            <Step1SelectDay
+              onDaySelect={(dayIndex) => {
+                setSelectedDay(dayIndex);
+                const today = new Date();
+                const todayDay = today.getDay();
+                let diff = dayIndex - todayDay;
+                if (diff <= 0) diff += 7;
+                const targetDate = new Date(today);
+                targetDate.setDate(today.getDate() + diff);
+                setSelectedDate(targetDate.toISOString().split("T")[0]);
+                setStep(2);
+              }}
+            />
+          )}
 
-        {step === 2 && selectedDay !== null && (
-          <Step2SelectSubSlot
-            dayOfWeek={selectedDay}
-            targetDate={selectedDate}
-            currentUserUid={currentUser?.uid || ""}
-            onSubSlotSelect={(subSlot) => {
-              setSelectedSubSlot(subSlot);
-              setStep(3);
-            }}
-            onBack={() => setStep(1)}
-          />
-        )}
+          {step === 2 && selectedDay !== null && (
+            <Step2SelectSubSlot
+              dayOfWeek={selectedDay}
+              targetDate={selectedDate}
+              currentUserUid={currentUser?.uid || ""}
+              onSubSlotSelect={(subSlot) => {
+                setSelectedSubSlot(subSlot);
+                setStep(3);
+              }}
+              onBack={() => setStep(1)}
+            />
+          )}
 
-        {step === 3 && selectedSubSlot && selectedDay !== null && (
-          <Step3Confirmation
-            selectedDate={selectedDate}
-            selectedDay={selectedDay}
-            selectedSubSlot={selectedSubSlot}
-            surahName={surahName}
-            notes={notes}
-            onSurahNameChange={setSurahName}
-            onNotesChange={setNotes}
-            onConfirm={handleBooking}
-            onBack={() => setStep(2)}
-            isSubmitting={isSubmitting}
-          />
-        )}
+          {step === 3 && selectedSubSlot && selectedDay !== null && (
+            <Step3Confirmation
+              selectedDate={selectedDate}
+              selectedDay={selectedDay}
+              selectedSubSlot={selectedSubSlot}
+              surahName={surahName}
+              notes={notes}
+              onSurahNameChange={setSurahName}
+              onNotesChange={setNotes}
+              onConfirm={handleBooking}
+              onBack={() => setStep(2)}
+              isSubmitting={isSubmitting}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-// ==================== الخطوة 1: اختيار اليوم ====================
+// ==================== الخطوة 1: اختيار اليوم (Premium Cards) ====================
 function Step1SelectDay({ onDaySelect }: { onDaySelect: (dayIndex: number) => void }) {
   const [schedule, setSchedule] = useState<Record<number, number>>({});
 
@@ -282,47 +289,58 @@ function Step1SelectDay({ onDaySelect }: { onDaySelect: (dayIndex: number) => vo
   }, []);
 
   return (
-    <div className="glass-panel p-5 md:p-8 rounded-2xl border border-card-border">
-      <h2 className="text-xl md:text-2xl font-bold text-white mb-6 font-quran">📅 اختر اليوم</h2>
-      <p className="text-slate-400 text-sm mb-6 font-sans">اختر يوم الأسبوع الذي يناسبك للتسميع.</p>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {DAYS_AR.map((day, index) => {
+        const slotCount = schedule[index] || 0;
+        const hasSlots = slotCount > 0;
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {DAYS_AR.map((day, index) => {
-          const slotCount = schedule[index] || 0;
-          const hasSlots = slotCount > 0;
+        return (
+          <button
+            key={index}
+            onClick={() => hasSlots && onDaySelect(index)}
+            disabled={!hasSlots}
+            className={`
+              relative group overflow-hidden rounded-3xl p-6 text-right transition-all duration-300 border
+              ${hasSlots
+                ? "bg-slate-800/40 border-slate-700/50 hover:border-gold/50 hover:shadow-2xl hover:shadow-gold/10 hover:-translate-y-1 cursor-pointer"
+                : "bg-slate-900/20 border-slate-800/50 opacity-40 grayscale cursor-not-allowed"}
+            `}
+          >
+            {/* Background Glow */}
+            {hasSlots && (
+              <div className="absolute -right-10 -top-10 w-32 h-32 bg-gold/5 rounded-full blur-3xl group-hover:bg-gold/10 transition-all"></div>
+            )}
 
-          return (
-            <button
-              key={index}
-              onClick={() => hasSlots && onDaySelect(index)}
-              disabled={!hasSlots}
-              className={`p-6 rounded-xl border-2 transition-all text-start ${hasSlots
-                ? "border-card-border hover:border-gold/50 bg-slate-800/30 cursor-pointer hover:shadow-lg hover:shadow-gold/5"
-                : "border-slate-800/30 bg-slate-900/20 opacity-40 cursor-not-allowed"
-                }`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-lg font-bold text-white font-quran">{day}</p>
-                  <p className="text-sm text-slate-400 font-sans mt-1">
-                    {hasSlots ? `${slotCount} فترة متاحة` : "لا توجد فترات"}
+            <div className="relative z-10 flex justify-between items-start">
+              <div>
+                <h3 className={`text-2xl font-bold font-quran mb-2 ${hasSlots ? "text-white group-hover:text-gold transition-colors" : "text-slate-500"}`}>
+                  {day}
+                </h3>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${hasSlots ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`}></div>
+                  <p className="text-sm font-sans text-slate-400">
+                    {hasSlots ? `${slotCount} فترات مختلفة متاحة` : "لا توجد حصص"}
                   </p>
                 </div>
-                {hasSlots && (
-                  <div className="flex items-center text-gold">
-                    <ChevronRight className="w-5 h-5" />
-                  </div>
-                )}
               </div>
-            </button>
-          );
-        })}
-      </div>
+
+              {hasSlots && (
+                <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center group-hover:bg-gold group-hover:border-gold group-hover:text-black transition-all">
+                  <ChevronRight className="w-5 h-5" />
+                </div>
+              )}
+            </div>
+
+            {/* Decorative bottom line */}
+            <div className={`absolute bottom-0 left-0 h-1 rounded-t-full transition-all duration-500 ${hasSlots ? "bg-gradient-to-r from-gold/0 via-gold to-gold/0 w-0 group-hover:w-full" : "w-0"}`}></div>
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-// ==================== الخطوة 2: اختيار فترة 15 دقيقة ====================
+// ==================== الخطوة 2: اختيار الوقت (Modern Grid) ====================
 function Step2SelectSubSlot({
   dayOfWeek,
   targetDate,
@@ -362,7 +380,7 @@ function Step2SelectSubSlot({
     return () => unsubscribe();
   }, [dayOfWeek]);
 
-  // قراءة الحجوزات الموجودة لنفس اليوم والتاريخ (في الوقت الفعلي)
+  // قراءة الحجوزات
   useEffect(() => {
     const bookingsRef = ref(db, "appointments/bookings");
     const unsubscribe = onValue(bookingsRef, (snapshot) => {
@@ -380,7 +398,6 @@ function Step2SelectSubSlot({
     return () => unsubscribe();
   }, [dayOfWeek, targetDate]);
 
-  // بناء الشرائح مع حالة الحجز
   const subSlots: SubSlot[] = useMemo(() => {
     const result: SubSlot[] = [];
     parentSlots.forEach((slot) => {
@@ -406,20 +423,38 @@ function Step2SelectSubSlot({
   const availableCount = subSlots.filter((s) => !s.bookedBy).length;
 
   return (
-    <div className="glass-panel p-5 md:p-8 rounded-2xl border border-card-border">
-      <h2 className="text-xl md:text-2xl font-bold text-white mb-2 font-quran">⏰ اختر فترة التسميع</h2>
-      <p className="text-slate-400 mb-1 font-sans">يوم {DAYS_AR[dayOfWeek]} • {targetDate}</p>
-      <p className="text-sm text-slate-500 mb-6 font-sans">
-        كل فترة <span className="text-gold font-bold">15 دقيقة</span> • {availableCount} فترة متاحة من {subSlots.length}
-      </p>
+    <div className="animate-in fade-in slide-in-from-right-8 duration-500">
+      {/* Header Info */}
+      <div className="flex flex-col md:flex-row justify-between items-end mb-8 bg-slate-800/40 p-6 rounded-3xl border border-white/5 backdrop-blur-sm">
+        <div>
+          <h2 className="text-3xl font-bold text-white mb-2 font-quran flex items-center gap-3">
+            <span className="text-gold">⏰</span> اختر التوقيت
+          </h2>
+          <div className="flex flex-wrap gap-4 text-sm font-sans text-slate-400">
+            <span className="flex items-center gap-2 bg-slate-900/50 px-3 py-1 rounded-lg border border-slate-700">
+              <Calendar className="w-4 h-4 text-gold" /> {DAYS_AR[dayOfWeek]}، {targetDate}
+            </span>
+            <span className="flex items-center gap-2 bg-slate-900/50 px-3 py-1 rounded-lg border border-slate-700">
+              <User className="w-4 h-4 text-emerald-400" /> {availableCount} مقعد متاح
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={onBack}
+          className="mt-4 md:mt-0 px-6 py-2 rounded-full border border-slate-600 text-slate-400 hover:text-white hover:bg-slate-700 transition-all font-sans text-sm"
+        >
+          تغيير اليوم
+        </button>
+      </div>
 
+      {/* Slots Grid */}
       {subSlots.length === 0 ? (
-        <div className="text-center py-12">
-          <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-          <p className="text-slate-400 font-sans">لا توجد فترات متاحة</p>
+        <div className="text-center py-20 bg-slate-900/30 rounded-3xl border border-dashed border-slate-800">
+          <AlertCircle className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+          <h3 className="text-xl text-slate-400 font-sans">عذراً، لا توجد فترات متاحة لهذا اليوم</h3>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {subSlots.map((sub, idx) => {
             const isBooked = !!sub.bookedBy;
             const isMyBooking = sub.bookedByUid === currentUserUid;
@@ -429,57 +464,52 @@ function Step2SelectSubSlot({
                 key={idx}
                 onClick={() => !isBooked && onSubSlotSelect(sub)}
                 disabled={isBooked}
-                className={`p-4 rounded-xl border-2 transition-all text-center ${isBooked
+                className={`
+                  relative group p-5 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-2
+                  ${isBooked
                     ? isMyBooking
-                      ? "border-blue-500/30 bg-blue-500/10 cursor-not-allowed"
-                      : "border-red-500/20 bg-red-500/5 cursor-not-allowed opacity-70"
-                    : "border-card-border hover:border-gold/50 bg-slate-800/30 cursor-pointer hover:shadow-lg hover:shadow-gold/5 active:scale-95"
-                  }`}
+                      ? "border-blue-500/50 bg-blue-900/10 opacity-100"
+                      : "border-slate-800 bg-slate-900/50 opacity-50 cursor-not-allowed grayscale"
+                    : "border-slate-700/50 bg-slate-800/40 hover:bg-slate-800 hover:border-gold hover:shadow-lg hover:shadow-gold/10 hover:-translate-y-1"
+                  }
+                `}
               >
-                <p className={`text-lg font-bold font-sans mb-1 ${isBooked ? (isMyBooking ? "text-blue-400" : "text-red-400/70") : "text-white"
-                  }`}>
+                <div className={`text-xl font-bold font-sans tracking-wider ${isBooked ? (isMyBooking ? "text-blue-400" : "text-slate-500") : "text-white group-hover:text-gold"}`}>
                   {sub.time}
-                </p>
-                <p className="text-[11px] text-slate-500 font-sans mb-2">
+                </div>
+                <div className="text-xs text-slate-500 font-sans bg-slate-900/50 px-2 py-1 rounded">
                   إلى {sub.endTime}
-                </p>
+                </div>
 
-                {isBooked ? (
-                  <div className="flex items-center justify-center gap-1.5">
-                    <Lock className="w-3 h-3 text-red-400/70" />
-                    <span className={`text-[11px] font-bold truncate ${isMyBooking ? "text-blue-400" : "text-red-400/70"}`}>
-                      {isMyBooking ? "حجزك" : sub.bookedBy}
+                {/* Status Indicator */}
+                <div className="mt-2">
+                  {isBooked ? (
+                    isMyBooking ? (
+                      <span className="text-xs font-bold text-blue-400 bg-blue-900/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <User className="w-3 h-3" /> حجزك
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                        <Lock className="w-3 h-3" /> محجوز
+                      </span>
+                    )
+                  ) : (
+                    <span className="text-xs font-bold text-emerald-400 bg-emerald-900/10 px-2 py-0.5 rounded-full flex items-center gap-1 group-hover:bg-emerald-500 group-hover:text-black transition-colors">
+                      <Check className="w-3 h-3" /> متاح
                     </span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-1.5">
-                    <Check className="w-3 h-3 text-emerald-500" />
-                    <span className="text-[11px] font-bold text-emerald-500">متاح</span>
-                  </div>
-                )}
+                  )}
+                </div>
               </button>
             );
           })}
         </div>
       )}
-
-      <div className="flex gap-3 items-center justify-between">
-        <button
-          onClick={onBack}
-          className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-semibold transition-colors font-sans"
-        >
-          ← رجوع
-        </button>
-        <div className="flex gap-4 text-xs font-sans text-slate-500">
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-emerald-500/20 border border-emerald-500/40 inline-block"></span> متاح</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-500/20 border border-red-500/40 inline-block"></span> محجوز</span>
-        </div>
-      </div>
     </div>
   );
 }
 
 // ==================== الخطوة 3: التأكيد ====================
+// ==================== الخطوة 3: التأكيد (Premium Ticket) ====================
 function Step3Confirmation({
   selectedDate,
   selectedDay,
@@ -504,97 +534,112 @@ function Step3Confirmation({
   isSubmitting: boolean;
 }) {
   return (
-    <div className="space-y-6">
-      <div className="glass-panel p-5 md:p-8 rounded-2xl border border-card-border">
-        <h2 className="text-xl md:text-2xl font-bold text-white mb-6 font-quran">✅ تأكيد الحجز</h2>
+    <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-2xl mx-auto">
 
-        <div className="space-y-4 mb-8">
-          {/* التاريخ */}
-          <div className="flex items-center gap-4 p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
-            <div className="w-12 h-12 bg-gradient-to-br from-gold/20 to-emerald-500/20 rounded-lg flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-gold" />
+      {/* Ticket Card */}
+      <div className="relative bg-slate-800/40 opacity-80 backdrop-blur-xl rounded-3xl border border-white/5 overflow-hidden shadow-2xl">
+
+        {/* Top Decorative Line */}
+        <div className="h-2 bg-gradient-to-r from-gold via-amber-400 to-gold w-full"></div>
+
+        <div className="p-8 md:p-10">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-gold/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-gold/20">
+              <BookOpen className="w-8 h-8 text-gold" />
             </div>
-            <div>
-              <p className="text-sm text-slate-400 font-sans">اليوم والتاريخ</p>
-              <p className="text-lg font-bold text-white font-sans">
-                {DAYS_AR[selectedDay]} • {selectedDate}
-              </p>
+            <h2 className="text-2xl font-bold text-white font-quran mb-2">تأكيد حجز التسميع</h2>
+            <p className="text-slate-400 font-sans text-sm">يرجى مراجعة التفاصيل قبل التأكيد النهائي</p>
+          </div>
+
+          {/* Details Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="bg-slate-900/50 p-4 rounded-2xl border border-white/5 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 font-sans">التاريخ</p>
+                <p className="text-sm font-bold text-white font-sans">{DAYS_AR[selectedDay]}، {selectedDate}</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-900/50 p-4 rounded-2xl border border-white/5 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-gold" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 font-sans">الوقت</p>
+                <p className="text-sm font-bold text-white font-sans">{selectedSubSlot.time} - {selectedSubSlot.endTime}</p>
+              </div>
             </div>
           </div>
 
-          {/* الوقت */}
-          <div className="flex items-center gap-4 p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
-            <div className="w-12 h-12 bg-gradient-to-br from-gold/20 to-emerald-500/20 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-gold" />
+          {/* Form Inputs */}
+          <div className="space-y-6">
+            <div className="group">
+              <label className="block text-sm font-medium text-gold mb-2 font-sans transition-all group-focus-within:translate-x-1">
+                📖 اسم السورة والآيات
+              </label>
+              <input
+                type="text"
+                value={surahName}
+                onChange={(e) => onSurahNameChange(e.target.value)}
+                placeholder="مثال: سورة الرحمن من 1 إلى 20"
+                className="w-full px-5 py-4 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/50 transition-all text-base font-sans"
+              />
             </div>
-            <div>
-              <p className="text-sm text-slate-400 font-sans">فترة التسميع</p>
-              <p className="text-lg font-bold text-white font-sans">
-                {selectedSubSlot.time} - {selectedSubSlot.endTime}
-                <span className="text-sm text-gold ms-2 font-quran">(15 دقيقة)</span>
-              </p>
-              <p className="text-sm text-slate-400 font-sans">
-                {LOCATIONS_MAP[selectedSubSlot.location] || selectedSubSlot.location}
-              </p>
+
+            <div className="group">
+              <label className="block text-sm font-medium text-slate-400 mb-2 font-sans transition-all group-focus-within:translate-x-1">
+                📝 ملاحظات إضافية (اختياري)
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => onNotesChange(e.target.value)}
+                placeholder="هل لديك أي ملاحظات للشيخ؟"
+                className="w-full px-5 py-4 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/50 transition-all text-base font-sans h-24 resize-none"
+              ></textarea>
             </div>
           </div>
         </div>
 
-        {/* اسم السورة */}
-        <div className="mb-6">
-          <label className="block text-sm font-semibold text-slate-300 mb-3 font-sans">
-            <BookOpen className="inline-block me-2 w-4 h-4" />
-            ما ستعرضه على الشيخ
-          </label>
-          <input
-            type="text"
-            value={surahName}
-            onChange={(e) => onSurahNameChange(e.target.value)}
-            placeholder="مثال: سورة الشعراء من الآية 1 إلى 20"
-            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-base md:text-lg font-sans"
-          />
+        {/* Ticket Perforation */}
+        <div className="relative flex items-center justify-between px-4">
+          <div className="w-6 h-6 bg-[#0a0f1c] rounded-full -ml-3"></div>
+          <div className="flex-1 border-t-2 border-dashed border-slate-700/50 mx-2"></div>
+          <div className="w-6 h-6 bg-[#0a0f1c] rounded-full -mr-3"></div>
         </div>
 
-        {/* ملاحظات */}
-        <div className="mb-8">
-          <label className="block text-sm font-semibold text-slate-300 mb-3 font-sans">
-            📝 ملاحظاتك (اختياري)
-          </label>
-          <textarea
-            value={notes}
-            onChange={(e) => onNotesChange(e.target.value)}
-            placeholder="أضف أي ملاحظات..."
-            className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold text-base font-sans"
-            rows={3}
-          ></textarea>
+        {/* Actions Footer */}
+        <div className="p-8 bg-slate-900/30">
+          <div className="flex gap-4">
+            <button
+              onClick={onBack}
+              className="px-6 py-4 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 transition-all font-sans"
+            >
+              تعديل
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={!surahName.trim() || isSubmitting}
+              className={`flex-1 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 font-sans shadow-lg
+                ${surahName.trim() && !isSubmitting
+                  ? "bg-gradient-to-r from-gold to-amber-500 text-black hover:shadow-gold/20 hover:scale-[1.02] active:scale-[0.98]"
+                  : "bg-slate-700 text-slate-400 cursor-not-allowed grayscale"
+                }
+              `}
+            >
+              {isSubmitting ? (
+                <span>جاري الحجز...</span>
+              ) : (
+                <>
+                  <Check className="w-5 h-5" />
+                  تأكيد الحجز الآن
+                </>
+              )}
+            </button>
+          </div>
         </div>
-      </div>
-
-      {/* الأزرار */}
-      <div className="flex gap-3">
-        <button
-          onClick={onBack}
-          className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-semibold transition-colors font-sans"
-        >
-          ← رجوع
-        </button>
-        <button
-          onClick={onConfirm}
-          disabled={!surahName.trim() || isSubmitting}
-          className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 font-sans ${surahName.trim() && !isSubmitting
-            ? "bg-gradient-to-r from-gold to-emerald-500 text-black hover:shadow-lg hover:shadow-gold/50"
-            : "bg-slate-700 text-slate-400 cursor-not-allowed"
-            }`}
-        >
-          {isSubmitting ? (
-            <span>جاري الحجز...</span>
-          ) : (
-            <>
-              <Check className="w-4 h-4" />
-              تأكيد الحجز
-            </>
-          )}
-        </button>
       </div>
     </div>
   );
