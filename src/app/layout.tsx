@@ -3,6 +3,8 @@ import { RealtimeProvider } from "@/hooks/useRealtime";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { WirdProvider } from "@/hooks/useWird";
 import Navigation from "@/components/Navigation";
+import { isFirebaseInitialized } from "@/lib/firebase";
+import FirebaseError from "@/components/FirebaseError";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -23,6 +25,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const isInitialized = isFirebaseInitialized;
+
+  if (!isInitialized) {
+    return (
+      <html lang="ar" dir="rtl">
+        <body className="font-sans antialiased bg-[#020617] text-white">
+          <FirebaseError />
+        </body>
+      </html>
+    );
+  }
+
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body

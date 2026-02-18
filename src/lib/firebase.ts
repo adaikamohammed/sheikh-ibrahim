@@ -40,4 +40,7 @@ if (app) {
     auth = {} as Auth;
 }
 
+
+
+export const isFirebaseInitialized = !!app;
 export { db, firestore, auth };
